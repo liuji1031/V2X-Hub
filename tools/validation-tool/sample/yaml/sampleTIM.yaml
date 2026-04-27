@@ -1,0 +1,87 @@
+# TravelerInformation Message
+travelerInformation:
+  msgCnt: 1 # MsgCount 
+  # timeStamp: [OPTIONAL] MinuteOfTheYear 
+  # packetID: [OPTIONAL] UniqueMSGID 
+  # urlB: [OPTIONAL] URL-Base 
+
+  dataFrames:
+    # TravelerDataFrameList (1..8 TravelerDataFrame)
+    - doNotUse1: 0 # SSPindex, always 0
+      frameType: advisory # TravelerInfoType ("advisory" or "road sign")
+      msgId: # CHOICE: either furtherInID or roadSignID must be present as key
+        roadSignID:
+          position: # Position3D
+            lat: 38897700 # Example latitude (in 1/10th microdegrees)
+            long: -77036500 # Example longitude (in 1/10th microdegrees)
+            # elevation: [OPTIONAL]
+            # regional: [OPTIONAL] SEQUENCE (1..4) OF RegionalExtension
+          viewAngle: "1000000000000000" # HeadingSlice (Bitstring, 16 bits)
+          # mutcdCode: [OPTIONAL] MUTCDCode
+          # crc: [OPTIONAL] MsgCRC
+      # startYear: [OPTIONAL] DYear
+      startTime: 525600 # MinuteOfTheYear INTEGER (0..527040) 
+      durationTime: 60 # MinutesDuration INTEGER (0..32000)
+      priority: 5 # SignPriority (0..7)
+      doNotUse2: 0 # SSPindex, set to 0 [cite: 58]
+
+      regions: # SEQUENCE (1..16) OF GeographicalPath
+        - name: "Example region" # [OPTIONAL] DescriptiveName
+          # id: [OPTIONAL] RoadSegmentReferenceID
+          # anchor: [OPTIONAL] Position3D
+          # laneWidth: [OPTIONAL] LaneWidth
+          # directionality: [OPTIONAL] DirectionOfUse
+          # closedPath: [OPTIONAL] BOOLEAN
+          # direction: [OPTIONAL] HeadingSlice
+          # description: [OPTIONAL] CHOICE: path, geometry, oldRegion
+          # regional: [OPTIONAL] SEQUENCE (1..4) OF RegionalExtension
+
+      doNotUse3: 0 # SSPindex, set to 0
+      doNotUse4: 0 # SSPindex, set to 0
+
+      content: # CHOICE: advisory, workZone, genericSign, speedLimit, exitService
+        advisory: # ITIScodesAndText
+          - item:  # CHOICE: itis, text
+              itis: 257 # ITIScodes, stopped-traffic
+          - item:
+              text: "Stopped traffic" # ITIStext
+      # url: [OPTIONAL] URL-Short
+
+      contentNew: # TravelerDataFrameNewPartIIIContent CHOICE
+        frictionInfo: # FrictionInformation
+          roadSurfaceDescription: # DescriptionOfRoadSurface, CHOICE: portlandCement, asphaltOrTar, gravel, grass, cinders, rock, ice, snow
+            portlandCement: # PortlandCement
+              type: newSharp # PortlandCementType, ENUM: newSharp, traveled, trafficPolished
+
+
+    - doNotUse1: 0
+      frameType: "road sign"
+      msgId: 
+        roadSignID:
+          position: 
+            lat: 34052200
+            long: -118243700
+          viewAngle: "0000000011110000"
+      startTime: 350000
+      durationTime: 1200
+      priority: 4
+      doNotUse2: 0
+
+      regions:
+        - name: "Example region 2"
+
+      doNotUse3: 0
+      doNotUse4: 0
+
+      content: 
+        speedLimit:
+          - item:
+              itis: 268
+          - item: 
+              text: "MAX 30 MPH"
+      
+      contentNew: 
+        frictionInfo: 
+          roadSurfaceDescription: 
+            gravel:
+              type: packedOiled
