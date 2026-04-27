@@ -1,0 +1,20 @@
+services:
+  validation-tool:
+    image: validation-tool:prod
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prod
+
+  dev:
+    image: validation-tool:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        - USERNAME=devuser
+        - UID=1000
+        - GID=1000
+    volumes:
+      - .:/validationTool:rw
