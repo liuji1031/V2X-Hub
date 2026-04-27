@@ -1,22 +1,47 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04 AS base
 
 ENV DEBIAN_FRONTEND="noninteractive" TZ="America/New_York"
-RUN apt-get update -y && apt-get install -y python3-dev python3-pip git unzip python3-tk
+RUN apt-get update -y && apt-get install -y python3-dev python3-pip git unzip python3-tk libxml2-dev libxslt1-dev
 
 RUN  python3 -m pip install --upgrade pip
 
-RUN mkdir /validationTool
-COPY . /validationTool
-
 WORKDIR /validationTool
-RUN git clone git@github.com:P1sec/pycrate.git
-WORKDIR /validationTool/pycrate
-RUN python3 setup.py install
+# RUN git clone https://github.com/pycrate-org/pycrate.git
+# RUN cd /validationTool/pycrate && python3 setup.py install
 
-WORKDIR /validationTool
-
+COPY requirements.txt /validationTool/requirements.txt
 RUN pip3 install -r requirements.txt
 
-ENTRYPOINT [ "python3" ]
+# install wheel for j2735 module
+ARG WHEEL_FILE="j2735_202409-0.1.0-py3-none-any.whl"
+COPY ./src/wheels/${WHEEL_FILE} /validationTool/
+RUN pip3 install /validationTool/${WHEEL_FILE} && rm /validationTool/${WHEEL_FILE}
 
+
+FROM base AS prod
+
+COPY . /validationTool
+
+ENTRYPOINT [ "python3" ]
 CMD [ "validationTool.py" ]
+
+FROM base AS dev
+
+ARG USERNAME=devuser
+ARG UID=1000
+ARG GID=${UID}
+
+# Create new user and home directory
+RUN groupadd --gid $GID $USERNAME \
+    && useradd --uid ${GID} --gid ${UID} --create-home ${USERNAME} \
+    # && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
+    # && chmod 0440 /etc/sudoers.d/${USERNAME} \
+    && mkdir -p /home/${USERNAME} \
+    && chown -R ${UID}:${GID} /home/${USERNAME}
+
+RUN pip3 install ipykernel ipython
+
+RUN chown -R ${UID}:${GID} /validationTool/
+USER ${USERNAME}
+
+ENTRYPOINT [ "sleep", "infinity" ]
