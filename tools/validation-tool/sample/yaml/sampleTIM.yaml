@@ -1,5 +1,4 @@
 # TravelerInformation Message
-travelerInformation:
   msgCnt: 1 # MsgCount 
   # timeStamp: [OPTIONAL] MinuteOfTheYear 
   # packetID: [OPTIONAL] UniqueMSGID 
@@ -9,14 +8,15 @@ travelerInformation:
     # TravelerDataFrameList (1..8 TravelerDataFrame)
     - doNotUse1: 0 # SSPindex, always 0
       frameType: advisory # TravelerInfoType ("advisory" or "road sign")
-      msgId: # CHOICE: either furtherInID or roadSignID must be present as key
+      msgId: # CHOICE: either furtherInfoID or roadSignID must be present as key
         roadSignID:
           position: # Position3D
             lat: 38897700 # Example latitude (in 1/10th microdegrees)
             long: -77036500 # Example longitude (in 1/10th microdegrees)
             # elevation: [OPTIONAL]
             # regional: [OPTIONAL] SEQUENCE (1..4) OF RegionalExtension
-          viewAngle: "1000000000000000" # HeadingSlice (Bitstring, 16 bits)
+          viewAngle: # HeadingSlice (Bitstring, 16 bits)
+            - from000-0to022-5degrees
           # mutcdCode: [OPTIONAL] MUTCDCode
           # crc: [OPTIONAL] MsgCRC
       # startYear: [OPTIONAL] DYear
@@ -41,10 +41,12 @@ travelerInformation:
 
       content: # CHOICE: advisory, workZone, genericSign, speedLimit, exitService
         advisory: # ITIScodesAndText
-          - item:  # CHOICE: itis, text
-              itis: 257 # ITIScodes, stopped-traffic
+          - item:
+              itis: 257 # CHOICE: itis, text
+               # ITIScodes, stopped-traffic
           - item:
               text: "Stopped traffic" # ITIStext
+              
       # url: [OPTIONAL] URL-Short
 
       contentNew: # TravelerDataFrameNewPartIIIContent CHOICE
