@@ -1,0 +1,101 @@
+{
+    "travelerInformation": {
+        "msgCnt": 1,
+        "dataFrames": [
+            {
+                "doNotUse1": 0,
+                "frameType": "advisory",
+                "msgId": {
+                    "roadSignID": {
+                        "position": {
+                            "lat": 38897700,
+                            "long": -77036500
+                        },
+                        "viewAngle": "1000000000000000"
+                    }
+                },
+                "startTime": 525600,
+                "durationTime": 60,
+                "priority": 5,
+                "doNotUse2": 0,
+                "regions": [
+                    {
+                        "name": "Example region"
+                    }
+                ],
+                "doNotUse3": 0,
+                "doNotUse4": 0,
+                "content": {
+                    "advisory": [
+                        {
+                            "item": {
+                                "itis": 257
+                            }
+                        },
+                        {
+                            "item": {
+                                "text": "Stopped traffic"
+                            }
+                        }
+                    ]
+                },
+                "contentNew": {
+                    "frictionInfo": {
+                        "roadSurfaceDescription": {
+                            "portlandCement": {
+                                "type": "newSharp"
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                "doNotUse1": 0,
+                "frameType": "road sign",
+                "msgId": {
+                    "roadSignID": {
+                        "position": {
+                            "lat": 34052200,
+                            "long": -118243700
+                        },
+                        "viewAngle": "0000000011110000"
+                    }
+                },
+                "startTime": 350000,
+                "durationTime": 1200,
+                "priority": 4,
+                "doNotUse2": 0,
+                "regions": [
+                    {
+                        "name": "Example region 2"
+                    }
+                ],
+                "doNotUse3": 0,
+                "doNotUse4": 0,
+                "content": {
+                    "speedLimit": [
+                        {
+                            "item": {
+                                "itis": 268
+                            }
+                        },
+                        {
+                            "item": {
+                                "text": "MAX 30 MPH"
+                            }
+                        }
+                    ]
+                },
+                "contentNew": {
+                    "frictionInfo": {
+                        "roadSurfaceDescription": {
+                            "gravel": {
+                                "type": "packedOiled"
+                            }
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
