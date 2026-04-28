@@ -1,5 +1,6 @@
 from typing import Union
-from j2735_202409 import Common, TravelerInformation, ITIS
+
+from j2735_202409 import ITIS, Common, TravelerInformation
 
 FIELD2TYPE_MAP = {
     "msgCnt": Common.MsgCount,
@@ -11,23 +12,24 @@ FIELD2TYPE_MAP = {
     "dataFrames.regions": TravelerInformation.GeographicalPath.set_val,
     # "dataFFrames.content.advisory": ITIS.ITIScodesAndText,
     # "dataFrames.content.workZone": TravelerInformation.WorkZone,
-    
 }
 
-def _strip_brackets(s:str):
+
+def _strip_brackets(s: str):
     out_s = ""
     i = 0
-    while i<len(s):
-        if s[i] == '[':
-            while i<len(s) and s[i] != ']':
-                i+=1
+    while i < len(s):
+        if s[i] == "[":
+            while i < len(s) and s[i] != "]":
+                i += 1
             i += 1  # one past the ']'
-        if i<len(s):
+        if i < len(s):
             out_s += s[i]
             i += 1
         else:
             break
     return out_s
+
 
 def _validate(key, val):
     _key = _strip_brackets(key)
@@ -35,35 +37,45 @@ def _validate(key, val):
         return ""
     try:
         fcn = FIELD2TYPE_MAP[_key]
-        fcn(val)
+        fcn(val)  # run validation function
         return ""
     except Exception as e:
         return f"Validation failed for field {key} with value {val}: {e}"
 
-def gen_child_key(parent_key: str, key:str, idx:Union[int, None]=None):
-    out = parent_key + "." + key if parent_key else key
+
+def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
+    if not parent_key:  # parent key empty
+        assert key, "parent key and child key cannot both be empty"
+        out = key
+    else:  # parent key non-empty
+        if key:
+            out = parent_key + "." + key
+        else:
+            out = parent_key
     if idx is not None:
         out += f"[{idx}]"
     return out
 
 
-def validate_recursive(data : Union[dict, list],err_msgs:list, parent_key : str = ""):
+def validate_recursive(
+    data: Union[dict, list], err_msgs: list, parent_key: str = ""
+):
     if isinstance(data, dict):
         for key, val in data.items():
-            if isinstance(val, dict):
-                validate_recursive(val, err_msgs, gen_child_key(parent_key, key))
-            elif isinstance(val, list):
-                validate_recursive(val, err_msgs, gen_child_key(parent_key, key))
+            child_key = gen_child_key(parent_key, key)
+            if isinstance(val, dict) or isinstance(val, list):
+                validate_recursive(val, err_msgs, child_key)
             else:
-                msg = _validate(key, val)
+                msg = _validate(child_key, val)
                 if msg:
                     err_msgs.append(msg)
     elif isinstance(data, list):
         for idx, item in enumerate(data):
-            if isinstance(item, dict):
-                validate_recursive(item, err_msgs, gen_child_key(parent_key, key, idx))
+            child_key = gen_child_key(parent_key, "", idx)
+            if isinstance(item, dict) or isinstance(item, list):
+                validate_recursive(item, err_msgs, child_key)
             else:
-                msg = _validate(parent_key + "." + key, item)
+                msg = _validate(child_key, item)
                 if msg:
                     err_msgs.append(msg)
     else:
