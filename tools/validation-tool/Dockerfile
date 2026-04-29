@@ -1,9 +1,10 @@
-FROM ubuntu:20.04 AS base
+FROM ubuntu:24.04 AS base
 
 ENV DEBIAN_FRONTEND="noninteractive" TZ="America/New_York"
 RUN apt-get update -y && apt-get install -y python3-dev python3-pip git unzip python3-tk libxml2-dev libxslt1-dev
 
-RUN  python3 -m pip install --upgrade pip
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+# RUN  python3 -m pip install --upgrade pip
 
 WORKDIR /validationTool
 # RUN git clone https://github.com/pycrate-org/pycrate.git
@@ -32,8 +33,10 @@ ARG UID=1000
 ARG GID=${UID}
 
 # Create new user and home directory
-RUN groupadd --gid $GID $USERNAME \
-    && useradd --uid ${GID} --gid ${UID} --create-home ${USERNAME} \
+RUN (userdel -r $(getent passwd $UID | cut -d: -f1) || true) && \
+    (groupdel $(getent group $GID | cut -d: -f1) || true) && \
+    groupadd --gid $GID $USERNAME \
+    && useradd --uid ${UID} --gid ${GID} --create-home ${USERNAME} \
     # && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
     # && chmod 0440 /etc/sudoers.d/${USERNAME} \
     && mkdir -p /home/${USERNAME} \
