@@ -1,35 +1,60 @@
-from j2735_202409 import ITIS, Common, TravelerInformation
 from typing import Any
-from copy import deepcopy
 
 
-def ITIScodesAndText_validator(data: Any):
-    """Custom validator for ITIScodesAndText class
+class SequenceOfValidator:
+    """Validate SEQUENCE of objects."""
 
-    An example ITIScodesAndText field in TraverlerInformation is as follows:
-    ```yaml
-    advisory:
-      - item:
-          itis: 257
-      - item:
-          text: "Stopped traffic"
-    ```
+    def __init__(self, validator_fcn, valid_range: tuple) -> None:
+        """Initialization
 
-    For PyCrate, need to convert the above into a list of tuple:
-    [{"item": ("itis", 257)}, {"item": ("item", "Stopped traffic")}]
-    """
-    print("validating ITIS")
-    assert isinstance(data, list), "value is not a list"
+        Args:
+            validator_fcn: the validation function for each item in the SEQUENCE
+            valid_range: a tuple of (min, max) number of items in the SEQUENCE (inclusive)
+        """
+        self.validator_fcn = validator_fcn
+        self.valid_range = valid_range
 
-    # process the list into the expected list of dict[str, tuple]
-    for d in data:
-        _d = deepcopy(d)  # not to modify original value
-        val = _d["item"]
-        assert len(val) == 1
-        assert isinstance(val, dict)
-        for k, v in val.items():  # asserted only one value
-            _d["item"] = (k, v)
+    def __call__(self, data: Any):
+        """Validate the data
 
-    # finally call the PyCrate object
-    ITIS.ITIScodesAndText.set_val(_d)
-    print("validated ITIScodesAndText")
+        Args:
+            data: the data to be validated, expected to be a list of dict
+
+        Raises:
+            Exception: if validation fails
+        """
+        assert isinstance(data, list), "value is not a list"
+        assert self.valid_range[0] <= len(data) <= self.valid_range[1], (
+            f"number of items in SEQUENCE out of valid range {self.valid_range}"
+        )
+        for i, d in enumerate(data):
+            try:
+                self.validator_fcn(d)
+            except Exception as e:
+                raise Exception(f"validation failed for item {i}: {e}")
+
+
+class PreprocessValidator:
+    """Add preprocessing before validation."""
+
+    def __init__(self, validator_fcn, preprocess_fcn):
+        """Initialization
+
+        Args:
+            validator_fcn: the validation function for the field
+            preprocess_fcn: the preprocessing function to be applied before validation
+        """
+        self.validator_fcn = validator_fcn
+        self.preprocess_fcn = preprocess_fcn
+
+    def __call__(self, data: Any):
+        """Preprocess and validate the data
+
+        Args:
+            data: the data to be validated
+
+        Raises:
+            Exception: if validation fails
+        """
+        preprocessed_data = self.preprocess_fcn(data)
+        self.validator_fcn(preprocessed_data)

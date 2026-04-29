@@ -1,8 +1,46 @@
-from typing import Union
+from typing import Union, Any
 from functools import partial
 
+from copy import deepcopy
+
 from j2735_202409 import ITIS, Common, TravelerInformation
-from custom_validator import ITIScodesAndText_validator
+from src.validation.custom_validator import (
+    SequenceOfValidator,
+    PreprocessValidator,
+)
+
+
+def ITIScodesAndText_preprocess(data: Any):
+    """Preprocess function for ITIScodesAndText class
+
+    An example ITIScodesAndText field in TraverlerInformation is as follows:
+    ```yaml
+    advisory:
+      - item:
+          itis: 257
+      - item:
+          text: "Stopped traffic"
+    ```
+
+    For PyCrate, need to convert the above into a list of tuple:
+    [{"item": ("itis", 257)}, {"item": ("item", "Stopped traffic")}]
+    """
+
+    try:
+        # process the list into the expected list of dict[str, tuple]
+        # provided the input conform to standard
+        assert isinstance(data, list)
+        _data = deepcopy(data)  # not to modify original value
+        for d in _data:
+            val = d["item"]
+            assert len(val) == 1
+            assert isinstance(val, dict)
+            for k, v in val.items():  # asserted only one value
+                d["item"] = (k, v)
+        return _data
+    except Exception as e:
+        return data  # return original data if preprocessing fails
+
 
 TIM_VALIDATOR_MAP = {
     "msgCnt": Common.MsgCount.set_val,
@@ -11,8 +49,12 @@ TIM_VALIDATOR_MAP = {
     "dataFrames.startTime": Common.MinuteOfTheYear.set_val,
     "dataFrames.durationTime": TravelerInformation.MinutesDuration.set_val,
     "dataFrames.priority": TravelerInformation.SignPriority.set_val,
-    "dataFrames.regions": TravelerInformation.GeographicalPath.set_val,
-    "dataFrames.content.advisory": ITIScodesAndText_validator,
+    "dataFrames.regions": SequenceOfValidator(
+        TravelerInformation.GeographicalPath.set_val, (1, 16)
+    ),
+    "dataFrames.content.advisory": PreprocessValidator(
+        ITIS.ITIScodesAndText.set_val, ITIScodesAndText_preprocess
+    ),
     # "dataFrames.content.workZone": TravelerInformation.WorkZone,
 }
 
@@ -66,10 +108,7 @@ def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
 def validate_recursive(
     data: Union[dict, list], err_msgs: list, parent_key: str = ""
 ):
-    if (
-        isinstance(data, dict)
-        and _strip_brackets(parent_key) in TIM_VALIDATOR_MAP
-    ):
+    if _strip_brackets(parent_key) in TIM_VALIDATOR_MAP:
         # if parent key already defined in map, check entire value instead of
         # individual fields separately, only do this for dict
         msg = _validate(parent_key, data)
