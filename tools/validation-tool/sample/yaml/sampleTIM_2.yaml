@@ -23,7 +23,7 @@
       startTime: 525600 # MinuteOfTheYear INTEGER (0..527040) 
       durationTime: 60 # MinutesDuration INTEGER (0..32000)
       priority: 5 # SignPriority (0..7)
-      doNotUse2: 0 # SSPindex, set to 0 [cite: 58]
+      doNotUse2: 0 # SSPindex, set to 0
 
       regions: # SEQUENCE (1..16) OF GeographicalPath
           - # has to provide one item
