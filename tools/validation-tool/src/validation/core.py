@@ -1,8 +1,9 @@
 from typing import Union
+from functools import partial
 
 from j2735_202409 import ITIS, Common, TravelerInformation
 
-FIELD2TYPE_MAP = {
+TIM_VALIDATOR_MAP = {
     "msgCnt": Common.MsgCount,
     "dataFrames.msgId.roadSignID": TravelerInformation.RoadSignID.set_val,
     "dataFrames.msgId.furtherInfoID": Common.FurtherInfoID.set_val,
@@ -31,16 +32,19 @@ def _strip_brackets(s: str):
     return out_s
 
 
-def _validate(key, val):
+def validate(key, val, fcn_map: dict):
     _key = _strip_brackets(key)
-    if _key not in FIELD2TYPE_MAP:
+    if _key not in fcn_map:
         return ""
     try:
-        fcn = FIELD2TYPE_MAP[_key]
+        fcn = fcn_map[_key]
         fcn(val)  # run validation function
         return ""
     except Exception as e:
         return f"Validation failed for field {key} with value {val}: {e}"
+
+
+_validate = partial(validate, fcn_map=TIM_VALIDATOR_MAP)
 
 
 def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
@@ -60,6 +64,14 @@ def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
 def validate_recursive(
     data: Union[dict, list], err_msgs: list, parent_key: str = ""
 ):
+    if _strip_brackets(parent_key) in TIM_VALIDATOR_MAP:
+        # if parent key already defined in map, check entire value instead of
+        # individual fields separately
+        msg = _validate(parent_key, data)
+        if msg:
+            err_msgs.append(msg)
+        return
+
     if isinstance(data, dict):
         for key, val in data.items():
             child_key = gen_child_key(parent_key, key)
