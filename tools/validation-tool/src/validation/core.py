@@ -2,16 +2,17 @@ from typing import Union
 from functools import partial
 
 from j2735_202409 import ITIS, Common, TravelerInformation
+from custom_validator import ITIScodesAndText_validator
 
 TIM_VALIDATOR_MAP = {
-    "msgCnt": Common.MsgCount,
+    "msgCnt": Common.MsgCount.set_val,
     "dataFrames.msgId.roadSignID": TravelerInformation.RoadSignID.set_val,
     "dataFrames.msgId.furtherInfoID": Common.FurtherInfoID.set_val,
     "dataFrames.startTime": Common.MinuteOfTheYear.set_val,
     "dataFrames.durationTime": TravelerInformation.MinutesDuration.set_val,
     "dataFrames.priority": TravelerInformation.SignPriority.set_val,
     "dataFrames.regions": TravelerInformation.GeographicalPath.set_val,
-    # "dataFFrames.content.advisory": ITIS.ITIScodesAndText,
+    "dataFrames.content.advisory": ITIScodesAndText_validator,
     # "dataFrames.content.workZone": TravelerInformation.WorkZone,
 }
 
@@ -34,6 +35,7 @@ def _strip_brackets(s: str):
 
 def validate(key, val, fcn_map: dict):
     _key = _strip_brackets(key)
+    print(f"validating, {key} -> {_key}")
     if _key not in fcn_map:
         return ""
     try:
@@ -64,9 +66,12 @@ def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
 def validate_recursive(
     data: Union[dict, list], err_msgs: list, parent_key: str = ""
 ):
-    if _strip_brackets(parent_key) in TIM_VALIDATOR_MAP:
+    if (
+        isinstance(data, dict)
+        and _strip_brackets(parent_key) in TIM_VALIDATOR_MAP
+    ):
         # if parent key already defined in map, check entire value instead of
-        # individual fields separately
+        # individual fields separately, only do this for dict
         msg = _validate(parent_key, data)
         if msg:
             err_msgs.append(msg)
