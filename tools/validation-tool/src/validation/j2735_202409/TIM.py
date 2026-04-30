@@ -1,10 +1,11 @@
-from typing import Any
 from copy import deepcopy
+from typing import Any
 
 from j2735_202409 import ITIS, Common, TravelerInformation
+
 from src.validation.custom_validator import (
-    SequenceOfValidator,
     PreprocessValidator,
+    SequenceOfValidator,
 )
 
 
@@ -49,20 +50,22 @@ MANDATORY_VALIDATOR_MAP = {
     "dataFrames.regions": SequenceOfValidator(
         TravelerInformation.GeographicalPath.set_val, (1, 16)
     ),
-    "dataFrames.content.advisory": PreprocessValidator(
-        ITIS.ITIScodesAndText.set_val, ITIScodesAndText_preprocess
-    ),
-    "dataFrames.content.workZone": PreprocessValidator(
-        TravelerInformation.WorkZone.set_val, ITIScodesAndText_preprocess
-    ),
-    "dataFrames.content.genericSign": PreprocessValidator(
-        TravelerInformation.GenericSignage.set_val, ITIScodesAndText_preprocess
-    ),
-    "dataFrames.content.speedLimit": PreprocessValidator(
-        TravelerInformation.SpeedLimit.set_val, ITIScodesAndText_preprocess
-    ),
-    "dataFrames.content.exitService": PreprocessValidator(
-        TravelerInformation.ExitService.set_val, ITIScodesAndText_preprocess
-    ),
-
+    "dataFrames.content": {  # CHOICE: advisory, workZone, genericSign, speedLimit, exitService
+        "advisory": PreprocessValidator(
+            ITIS.ITIScodesAndText.set_val, ITIScodesAndText_preprocess
+        ),
+        "workZone": PreprocessValidator(
+            TravelerInformation.WorkZone.set_val, ITIScodesAndText_preprocess
+        ),
+        "genericSign": PreprocessValidator(
+            TravelerInformation.GenericSignage.set_val,
+            ITIScodesAndText_preprocess,
+        ),
+        "speedLimit": PreprocessValidator(
+            TravelerInformation.SpeedLimit.set_val, ITIScodesAndText_preprocess
+        ),
+        "exitService": PreprocessValidator(
+            TravelerInformation.ExitService.set_val, ITIScodesAndText_preprocess
+        ),
+    },
 }
