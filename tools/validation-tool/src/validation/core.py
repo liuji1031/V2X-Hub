@@ -2,7 +2,7 @@
 
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Union
 
 log_level = os.getenv("VALIDATION_LOG_LEVEL", "INFO").upper()
@@ -24,24 +24,30 @@ RESERVED_KEYS = {SELF, REQUIRED}
 class ValidationError:
     key: str
     val: Any
-    error_msg: str
+    error_msg: str = field(repr=False)  # type: ignore
 
+    # hidden from init and repr, will be set by custom setter
+    _error_msg: str = field(init=False, repr=False)
 
-def _format_path(path: list) -> str:
-    """Join a path list into a human-readable dot-separated string.
+    @property
+    def error_msg(self):
+        return self._error_msg
 
-    Args:
-        path: list of keys, where index entries are formatted as "[i]"
-    """
-    result = ""
-    for part in path:
-        if part.startswith("["):
-            result += part
-        else:
-            if result:
-                result += "."
-            result += part
-    return result or "(root)"
+    @error_msg.setter
+    def error_msg(self, msg: str):
+        """Custom setter for error_msg.
+
+        The error message from pycrate uses the following format:
+        <some failure message>, <value of the field that failed validation>
+        The custom setter removes the part after comma
+        """
+        self._error_msg = msg.split(",")[0]
+
+    def __repr__(self):
+        return (
+            f"ValidationError(key={self.key!r}, val={self.val!r}, "
+            f"error_msg={self._error_msg!r})"
+        )
 
 
 def _validate_value(parent_key: str, val: Any, validator, errors: list):
@@ -52,23 +58,6 @@ def _validate_value(parent_key: str, val: Any, validator, errors: list):
         validator(val)
     except Exception as e:
         errors.append(ValidationError(parent_key, val, str(e)))
-
-
-def _validate_choice(path: list, val: Any, choice_map: dict, errors: list):
-    """Validate a CHOICE field: data must be a dict with exactly one key that
-    exists in the choice_map.
-    """
-    path_str = _format_path(path)
-    logger.debug(f"validating CHOICE: {path_str}")
-    try:
-        assert isinstance(val, dict), "CHOICE value must be a dict"
-        assert len(val) == 1, "CHOICE must have exactly one item"
-        for k, v in val.items():
-            assert k in choice_map, f"wrong CHOICE key: {k}"
-            logger.debug(f"\t CHOICE {k}: {choice_map[k]}({v})")
-            choice_map[k](v)
-    except Exception as e:
-        errors.append(ValidationError(path_str, val, f"Validation failed: {e}"))
 
 
 def validate_required_keys(
