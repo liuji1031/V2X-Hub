@@ -1,5 +1,19 @@
 """Core functions for the validation package."""
+
+import logging
+import os
 from typing import Union
+
+log_level = os.getenv("VALIDATION_LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=log_level
+    if log_level in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    else "INFO",
+    format="%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
 
 def _strip_brackets(s: str):
     out_s = ""
@@ -26,12 +40,20 @@ def validate(key, val, fcn_map: dict):
         fcn_map: the validator function map, mapping from key to validator function
     """
     _key = _strip_brackets(key)
-    print(f"validating, {key} -> {_key}")
+    logger.debug(f"validating: {key} -> {_key}")
     if _key not in fcn_map:
         return ""
     try:
         fcn = fcn_map[_key]
-        fcn(val)  # run validation function
+        if isinstance(fcn, dict):  # use dictionary to express CHOICE
+            # in this case, val should also be a dict
+            assert len(val) == 1, "CHOICE must have exactly one item"
+            for k, v in val.items():
+                logger.debug(f"\t, {fcn[k]}({v})")
+                fcn[k](v)
+        else:
+            logger.debug(f"\t {fcn}({val})")
+            fcn(val)  # run validation function
         return ""
     except Exception as e:
         return f"Validation failed for field {key} with value {val}: {e}"
@@ -45,7 +67,7 @@ def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
         key = "dataFrames"
         idx = 0
         gen_child_key(parent_key, key, idx) -> "dataFrames[0]"
-        
+
         parent_key = "dataFrames[0]"
         key = "msgId"
         idx = None
@@ -70,20 +92,23 @@ def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
 
 
 def validate_recursive(
-    validator_map: dict, data: Union[dict, list], err_msgs: list, parent_key: str = ""
-):  
+    validator_map: dict,
+    data: Union[dict, list],
+    err_msgs: list,
+    parent_key: str = "",
+):
     """Validate the data recursively using the validator map.
 
     Args:
-        validator_map[str, Any]: the validator map, mapping from key to validator 
+        validator_map[str, Any]: the validator map, mapping from key to validator
             function
         data: the data to be validated
         err_msgs: the list of error messages
         parent_key: the parent key
     """
     if _strip_brackets(parent_key) in validator_map:
-        # if parent key already defined in map, check entire value instead of
-        # individual fields separately, only do this for dict
+        # if parent key already defined in map, validate the value in entirety
+        # regardless of finer structures within the value
         msg = validate(parent_key, data, validator_map)
         if msg:
             err_msgs.append(msg)
