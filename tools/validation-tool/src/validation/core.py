@@ -2,8 +2,9 @@
 
 import logging
 import os
-from typing import Union
+from typing import Union, Any
 
+from dataclasses import dataclass
 log_level = os.getenv("VALIDATION_LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
     level=log_level
@@ -14,22 +15,26 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+CONT_TRAVERSAL = True  # to signal to continue traversing the sub-fields even if parent key has a hit in the validator map
 
-def _strip_brackets(s: str):
+
+def _strip_num_in_brackets(s: str):
     out_s = ""
     i = 0
     while i < len(s):
+        out_s += s[i]
         if s[i] == "[":
             while i < len(s) and s[i] != "]":
                 i += 1
-            i += 1  # one past the ']'
-        if i < len(s):
-            out_s += s[i]
-            i += 1
-        else:
-            break
+            out_s += s[i]  # s[i] = ']'
+        i += 1
     return out_s
 
+@dataclass
+class ValidationError:
+    key: str
+    val: Any
+    error_msg: str
 
 def validate(key, val, fcn_map: dict):
     """Validate the data using the validator map.
@@ -39,24 +44,29 @@ def validate(key, val, fcn_map: dict):
         val: the value to be validated
         fcn_map: the validator function map, mapping from key to validator function
     """
-    _key = _strip_brackets(key)
+    _key = _strip_num_in_brackets(key)
     logger.debug(f"validating: {key} -> {_key}")
     if _key not in fcn_map:
-        return ""
+        return None
     try:
         fcn = fcn_map[_key]
+        if isinstance(fcn, tuple):
+            # when tuple is encountered, the first element is the validator function,
+            # the second element is a flag to signal continuing traversal, irrelevant here
+            fcn = fcn[0]
         if isinstance(fcn, dict):  # use dictionary to express CHOICE
             # in this case, val should also be a dict
             assert len(val) == 1, "CHOICE must have exactly one item"
             for k, v in val.items():
                 logger.debug(f"\t, {fcn[k]}({v})")
+                assert k in fcn, f"Wrong CHOICE key: {k}"
                 fcn[k](v)
         else:
             logger.debug(f"\t {fcn}({val})")
             fcn(val)  # run validation function
-        return ""
+        return None
     except Exception as e:
-        return f"Validation failed for field {key} with value {val}: {e}"
+        return ValidationError(key, val, f"Validation failed: {e}")
 
 
 def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
@@ -94,7 +104,7 @@ def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
 def validate_recursive(
     validator_map: dict,
     data: Union[dict, list],
-    err_msgs: list,
+    errors: list[ValidationError],
     parent_key: str = "",
 ):
     """Validate the data recursively using the validator map.
@@ -103,34 +113,38 @@ def validate_recursive(
         validator_map[str, Any]: the validator map, mapping from key to validator
             function
         data: the data to be validated
-        err_msgs: the list of error messages
+        errors: the list of ValidationError objects
         parent_key: the parent key
     """
-    if _strip_brackets(parent_key) in validator_map:
-        # if parent key already defined in map, validate the value in entirety
-        # regardless of finer structures within the value
-        msg = validate(parent_key, data, validator_map)
-        if msg:
-            err_msgs.append(msg)
-        return
+    _parent_key = _strip_num_in_brackets(parent_key)
+    if _parent_key in validator_map:
+        # if parent key already defined in map, validate the value in entirety first
+        err = validate(parent_key, data, validator_map)
+        if err:
+            errors.append(err)
+        entry = validator_map[_parent_key]
+        if not (isinstance(entry, tuple) and len(entry) == 2 and entry[1] is CONT_TRAVERSAL):
+            # check if a tuple is supplied and the second element is CONT_TRAVERSAL
+            # if not, return. If yes, continue validating the sub-fields
+            return
 
     if isinstance(data, dict):
         for key, val in data.items():
             child_key = gen_child_key(parent_key, key)
             if isinstance(val, dict) or isinstance(val, list):
-                validate_recursive(validator_map, val, err_msgs, child_key)
+                validate_recursive(validator_map, val, errors, child_key)
             else:
-                msg = validate(child_key, val, validator_map)
-                if msg:
-                    err_msgs.append(msg)
+                err = validate(child_key, val, validator_map)
+                if err:
+                    errors.append(err)
     elif isinstance(data, list):
         for idx, item in enumerate(data):
             child_key = gen_child_key(parent_key, "", idx)
             if isinstance(item, dict) or isinstance(item, list):
-                validate_recursive(validator_map, item, err_msgs, child_key)
+                validate_recursive(validator_map, item, errors, child_key)
             else:
-                msg = validate(child_key, item, validator_map)
-                if msg:
-                    err_msgs.append(msg)
+                err = validate(child_key, item, validator_map)
+                if err:
+                    errors.append(err)
     else:
         pass
