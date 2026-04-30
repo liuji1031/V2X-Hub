@@ -1,11 +1,12 @@
-from src.validation import j2735_202409
+import os
+from src.validation.j2735._202409 import (
+    MESSAGE_VALIDATORS as j2735_202409_MESSAGE_VALIDATORS,
+)
 from src.validation.core import validate_recursive
 
-STANDARDS = {
-    "j2735_202409": j2735_202409.MESSAGE_VALIDATORS,
-}
+STANDARDS = {"j2735_202409": j2735_202409_MESSAGE_VALIDATORS}
 
-DEFAULT_STANDARD = "j2735_202409"
+DEFAULT_STANDARD = os.getenv("VALIDATION_STANDARD", "j2735_202409")
 
 
 def validate_message(
