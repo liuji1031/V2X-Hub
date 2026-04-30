@@ -26,7 +26,7 @@
       doNotUse2: 0 # SSPindex, set to 0
 
       regions: # SEQUENCE (1..16) OF GeographicalPath
-          - # has to provide one item
+          - # has to provide one item, can be empty
             {}
           # name: # [OPTIONAL] DescriptiveName
           # id: [OPTIONAL] RoadSegmentReferenceID
