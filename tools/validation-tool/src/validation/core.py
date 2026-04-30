@@ -4,6 +4,7 @@ import logging
 import os
 from dataclasses import dataclass, field
 from typing import Any, Union
+from custom_validator import MultipleErrors
 
 log_level = os.getenv("VALIDATION_LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
@@ -57,7 +58,17 @@ def _validate_value(parent_key: str, val: Any, validator, errors: list):
         logger.debug(f"\t {validator}({val})")
         validator(val)
     except Exception as e:
-        errors.append(ValidationError(parent_key, val, str(e)))
+        if isinstance(e, MultipleErrors):
+            # returned from SequenceOfValidator, meaning val is guaranteed to be a
+            # list
+            for idx, sub_e in e.errors:
+                errors.append(
+                    ValidationError(
+                        f"{parent_key}[{idx}]", val[idx], str(sub_e)
+                    )
+                )
+        else:
+            errors.append(ValidationError(parent_key, val, str(e)))
 
 
 def validate_required_keys(

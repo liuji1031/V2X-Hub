@@ -30,6 +30,28 @@ class CustomValidator(ABC):
         )
 
 
+class MultipleErrors(Exception):
+    """Exception raised when multiple validation errors occur."""
+
+    def __init__(self, errors: list[tuple[int, Exception]]):
+        """Initialization for the MultipleErrors exception.
+
+        Args:
+            errors: a list of tuples, where each tuple contains the index of the item that failed validation and the corresponding exception
+        """
+        self.errors = errors
+        # Initialize the base class with a summary message
+        super().__init__(f"Found {len(errors)} validation error(s).")
+
+    def __str__(self) -> str:
+        """Formatted string representation of all errors."""
+        summary = super().__str__()
+        error_list = "\n".join(
+            f" -> item {idx}: {err}" for idx, err in self.errors
+        )
+        return f"{summary}\n{error_list}"
+
+
 class SequenceOfValidator(CustomValidator):
     """Validate SEQUENCE of objects."""
 
@@ -67,11 +89,14 @@ class SequenceOfValidator(CustomValidator):
         assert self.valid_range[0] <= len(data) <= self.valid_range[1], (
             f"number of items in SEQUENCE out of valid range ({self.valid_range[0]}...{self.valid_range[1]})"
         )
+        err_list = []
         for i, d in enumerate(data):
             try:
                 self.validator_fcn(d)
             except Exception as e:
-                raise Exception(f"validation failed for item {i}: {e}")
+                err_list.append((i, e))
+        if err_list:
+            raise MultipleErrors(err_list)
 
 
 class PreprocessValidator(CustomValidator):
