@@ -129,10 +129,9 @@ def validate_recursive(
             validate_required_keys(validator_map, data, errors, path)
 
         for key, val in data.items():
-            child_path = path + [key]
             if key in RESERVED_KEYS or key not in validator_map:
                 continue
-
+            child_path = path + [key]
             node = validator_map[key]
 
             if callable(node):
