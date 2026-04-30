@@ -19,9 +19,15 @@ class SequenceOfValidator:
             valid_range: a tuple of (min, max) number of items in the SEQUENCE (inclusive)
         """
         assert callable(validator_fcn), "validator_fcn must be callable"
-        assert isinstance(valid_range, tuple) and len(valid_range) == 2, "valid_range must be a tuple of (min, max)"
-        assert isinstance(valid_range[0], int) and isinstance(valid_range[1], int), "valid_range values must be integers"
-        assert valid_range[0] >= 0 and valid_range[1] >= valid_range[0], "valid_range must have non-negative integers with max >= min"
+        assert isinstance(valid_range, tuple) and len(valid_range) == 2, (
+            "valid_range must be a tuple of (min, max)"
+        )
+        assert isinstance(valid_range[0], int) and isinstance(
+            valid_range[1], int
+        ), "valid_range values must be integers"
+        assert valid_range[0] >= 0 and valid_range[1] >= valid_range[0], (
+            "valid_range must have non-negative integers with max >= min"
+        )
         self.validator_fcn = validator_fcn
         self.valid_range = valid_range
 
@@ -80,11 +86,15 @@ class ChoiceValidator:
         """Initialization
 
         Args:
-            choice_map: a dict mapping each possible CHOICE key to its validation function
+            choice_map: a dict mapping each possible CHOICE key to its validation
+            function or any other callable that raises an exception if validation fails,
+            e.g., other validators
         """
         assert isinstance(choice_map, dict), "choice_map must be a dict"
         for k, v in choice_map.items():
-            assert callable(v), f"validation function for choice '{k}' must be callable"
+            assert callable(v), (
+                f"validation function for choice '{k}' must be callable"
+            )
         self.choice_map = choice_map
 
     def __call__(self, data: Any):
