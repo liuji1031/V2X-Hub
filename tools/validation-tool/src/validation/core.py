@@ -15,7 +15,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-RESERVED_KEYS = {"self", "required"}
+SELF = "__self__"
+REQUIRED = "__required__"
+RESERVED_KEYS = {SELF, REQUIRED}
 
 
 @dataclass
@@ -102,8 +104,8 @@ def validate_recursive(
     """Validate the data by co-traversing a nested validator map alongside the data.
 
     The validator map mirrors the expected message structure. Reserved keys:
-        - "self": a callable applied to the current node's value as a whole
-        - "required": a list of child key names that must exist in the data
+        - "__self__": a callable applied to the current node's value as a whole
+        - "__required__": a list of child key names that must exist in the data
 
     Args:
         validator_map: the nested validator map
@@ -114,8 +116,8 @@ def validate_recursive(
     if path is None:
         path = []
 
-    if "self" in validator_map:
-        _validate_value(path, data, validator_map["self"], errors)
+    if SELF in validator_map:
+        _validate_value(path, data, validator_map[SELF], errors)
 
     if isinstance(data, list):
         for idx, item in enumerate(data):
@@ -125,7 +127,7 @@ def validate_recursive(
         return
 
     if isinstance(data, dict):
-        if "required" in validator_map:
+        if REQUIRED in validator_map:
             validate_required_keys(validator_map, data, errors, path)
 
         for key, val in data.items():
@@ -142,5 +144,5 @@ def validate_recursive(
                 if isinstance(val, (dict, list)):
                     validate_recursive(node, val, errors, child_path)
                 else:
-                    if "self" in node:
-                        _validate_value(child_path, val, node["self"], errors)
+                    if SELF in node:
+                        _validate_value(child_path, val, node[SELF], errors)
