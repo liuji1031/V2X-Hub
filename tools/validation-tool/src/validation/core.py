@@ -2,8 +2,8 @@
 
 import logging
 import os
-from typing import Any, Union
 from dataclasses import dataclass
+from typing import Any, Union
 
 log_level = os.getenv("VALIDATION_LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
@@ -70,6 +70,29 @@ def _validate_choice(path: list, val: Any, choice_map: dict, errors: list):
         errors.append(ValidationError(path_str, val, f"Validation failed: {e}"))
 
 
+def validate_required_keys(
+    validator_map: dict, data: dict, errors: list, path: list
+):
+    """Validate that the data contains all required keys.
+
+    Args:
+        validator_map: the nested validator map
+        data: the data to be validated
+        errors: the list of ValidationError objects
+        path: the current nesting path (list of keys), used for error reporting
+    """
+    assert "required" in validator_map
+    for req_key in validator_map["required"]:
+        if req_key not in data:
+            errors.append(
+                ValidationError(
+                    _format_path(path + [req_key]),
+                    None,
+                    f"Missing required field: {req_key}",
+                )
+            )
+
+
 def validate_recursive(
     validator_map: dict,
     data: Union[dict, list],
@@ -103,13 +126,7 @@ def validate_recursive(
 
     if isinstance(data, dict):
         if "required" in validator_map:
-            for req_key in validator_map["required"]:
-                if req_key not in data:
-                    errors.append(ValidationError(
-                        _format_path(path + [req_key]),
-                        None,
-                        f"Missing required field: {req_key}",
-                    ))
+            validate_required_keys(validator_map, data, errors, path)
 
         for key, val in data.items():
             child_path = path + [key]
