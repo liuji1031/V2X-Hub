@@ -7,6 +7,7 @@ from src.validation.custom_validator import (
     PreprocessValidator,
     SequenceOfValidator,
 )
+from src.validation.core import SELF, REQUIRED
 
 
 def ITIScodesAndText_preprocess(data: Any):
@@ -44,8 +45,8 @@ MANDATORY_VALIDATOR_MAP = {
     "required": ["msgCnt", "dataFrames"],  # mandatory fields
     "msgCnt": Common.MsgCount.set_val,
     "dataFrames": {
-        "self": SequenceOfValidator(lambda x: None, (1, 8)),
-        "required": [
+        SELF: SequenceOfValidator(lambda x: None, (1, 8)),
+        REQUIRED: [
             "frameType",
             "msgId",
             "startTime",

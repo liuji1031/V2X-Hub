@@ -1,4 +1,4 @@
-from src.validation.j2735_202409.TIM import (
+from src.validation.j2735._202409.TIM import (
     MANDATORY_VALIDATOR_MAP as TIM_VALIDATOR_MAP,
 )
 
