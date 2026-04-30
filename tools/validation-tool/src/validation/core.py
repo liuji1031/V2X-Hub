@@ -44,15 +44,14 @@ def _format_path(path: list) -> str:
     return result or "(root)"
 
 
-def _validate_value(path: list, val: Any, validator, errors: list):
+def _validate_value(parent_key: str, val: Any, validator, errors: list):
     """Run a single validator callable on a value, appending errors if it fails."""
-    path_str = _format_path(path)
-    logger.debug(f"validating: {path_str}")
+    logger.debug(f"validating: {parent_key}")
     try:
         logger.debug(f"\t {validator}({val})")
         validator(val)
     except Exception as e:
-        errors.append(ValidationError(path_str, val, f"Validation failed: {e}"))
+        errors.append(ValidationError(parent_key, val, str(e)))
 
 
 def _validate_choice(path: list, val: Any, choice_map: dict, errors: list):
@@ -94,12 +93,42 @@ def validate_required_keys(
                 )
             )
 
+def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
+    """Generate the child key from the parent key and the key.
+
+    Example:
+        parent_key = ""
+        key = "dataFrames"
+        idx = 0
+        gen_child_key(parent_key, key, idx) -> "dataFrames[0]"
+
+        parent_key = "dataFrames[0]"
+        key = "msgId"
+        idx = None
+        gen_child_key(parent_key, key, idx) -> "dataFrames[0].msgId"
+
+    Args:
+        parent_key: the parent key
+        key: the key
+        idx: the index
+    """
+    if not parent_key:  # parent key empty
+        assert key, "parent key and child key cannot both be empty"
+        out = key
+    else:  # parent key non-empty
+        if key:
+            out = parent_key + "." + key
+        else:
+            out = parent_key
+    if idx is not None:
+        out += f"[{idx}]"
+    return out
 
 def validate_recursive(
     validator_map: dict,
     data: Union[dict, list],
     errors: list,
-    path: list | None = None,
+    parent_key: str = "",
 ):
     """Validate the data by co-traversing a nested validator map alongside the data.
 
@@ -108,39 +137,49 @@ def validate_recursive(
         - "__required__": a list of child key names that must exist in the data
 
     Args:
-        validator_map: the nested validator map
+        validator_map, dict[str, Any]: the nested validator map
         data: the data to be validated
         errors: the list of ValidationError objects
-        path: the current nesting path (list of keys), used for error reporting
+        parent_key: the current nesting path (string), used for error reporting
     """
-    if path is None:
-        path = []
-
+    # validator map represents the schema corresponding to the current parent_key
+    # data is essentially the value corresponding to parent_key
     if SELF in validator_map:
-        _validate_value(path, data, validator_map[SELF], errors)
+        _validate_value(parent_key, data, validator_map[SELF], errors)
 
     if isinstance(data, list):
         for idx, item in enumerate(data):
-            child_path = path + [f"[{idx}]"]
+            child_key = gen_child_key(parent_key, "", idx)
             if isinstance(item, (dict, list)):
-                validate_recursive(validator_map, item, errors, child_path)
+                # validator_map stays at the same level, apply the same schema to
+                # each item in list
+                validate_recursive(validator_map, item, errors, child_key)
         return
 
     if isinstance(data, dict):
+        # check required keys at current level if defined
         if REQUIRED in validator_map:
-            validate_required_keys(validator_map, data, errors, path)
+            validate_required_keys(validator_map, data, errors, parent_key)
 
+        # iterate through the keys in data, retrieve the corresponding validator from
+        # the validator_map, and validate recursively
         for key, val in data.items():
-            if key in RESERVED_KEYS or key not in validator_map:
+            if key in RESERVED_KEYS:
+                # it is assumed that the reserved keys will NOT appear in real data
+                logger.warning(f"data contains reserved key {key} at {parent_key}, skipping validation for this key")
                 continue
-            child_path = path + [key]
-            node = validator_map[key]
+            if key not in validator_map:
+                # skip if not required to validate, e.g., optional fields
+                continue
+            
+            child_key = gen_child_key(parent_key, key)
+            child_val_map = validator_map[key]
 
-            if callable(node):
-                _validate_value(child_path, val, node, errors)
-            elif isinstance(node, dict):
-                if isinstance(val, (dict, list)):
-                    validate_recursive(node, val, errors, child_path)
-                else:
-                    if SELF in node:
-                        _validate_value(child_path, val, node[SELF], errors)
+            if callable(child_val_map):
+                # map directly to a validator function
+                _validate_value(child_key, val, child_val_map, errors)
+            elif isinstance(child_val_map, dict):
+                # nested validator map, validate recursively
+                # the type of val will be automatically handled in the recursive call
+                # i.e., list, dict or other
+                validate_recursive(child_val_map, val, errors, child_key)
