@@ -55,6 +55,7 @@ MANDATORY_VALIDATOR_MAP = {
             "priority",
             "regions",
             "content",
+            "contentNew",
         ],  # mandatory fields
         "frameType": TravelerInformation.TravelerInfoType.set_val,
         "msgId": ChoiceValidator(
@@ -91,6 +92,9 @@ MANDATORY_VALIDATOR_MAP = {
                     ITIScodesAndText_preprocess,
                 ),
             }
+        ),
+        "contentNew": ChoiceValidator(
+            {"frictionInfo": Common.FrictionInformation.set_val}
         ),
     },
 }
