@@ -3,6 +3,7 @@ from typing import Any
 
 from j2735_202409 import ITIS, Common, TravelerInformation
 
+from src.validation.core import CONT_TRAVERSAL
 from src.validation.custom_validator import (
     PreprocessValidator,
     SequenceOfValidator,
@@ -42,15 +43,19 @@ def ITIScodesAndText_preprocess(data: Any):
 
 MANDATORY_VALIDATOR_MAP = {
     "msgCnt": Common.MsgCount.set_val,
-    "dataFrames.msgId.roadSignID": TravelerInformation.RoadSignID.set_val,
-    "dataFrames.msgId.furtherInfoID": Common.FurtherInfoID.set_val,
-    "dataFrames.startTime": Common.MinuteOfTheYear.set_val,
-    "dataFrames.durationTime": TravelerInformation.MinutesDuration.set_val,
-    "dataFrames.priority": TravelerInformation.SignPriority.set_val,
-    "dataFrames.regions": SequenceOfValidator(
+    "dataFrames": (SequenceOfValidator(lambda x: None, (1, 8)), CONT_TRAVERSAL),
+    "dataFrames[].frameType": TravelerInformation.TravelerInfoType.set_val,
+    "dataFrames[].msgId": {
+        "roadSignID": TravelerInformation.RoadSignID.set_val,
+        "furtherInfoID": Common.FurtherInfoID.set_val,
+    },
+    "dataFrames[].startTime": Common.MinuteOfTheYear.set_val,
+    "dataFrames[].durationTime": TravelerInformation.MinutesDuration.set_val,
+    "dataFrames[].priority": TravelerInformation.SignPriority.set_val,
+    "dataFrames[].regions": SequenceOfValidator(
         TravelerInformation.GeographicalPath.set_val, (1, 16)
     ),
-    "dataFrames.content": {  # CHOICE: advisory, workZone, genericSign, speedLimit, exitService
+    "dataFrames[].content": {  # CHOICE: advisory, workZone, genericSign, speedLimit, exitService
         "advisory": PreprocessValidator(
             ITIS.ITIScodesAndText.set_val, ITIScodesAndText_preprocess
         ),
