@@ -42,15 +42,6 @@ def _format_path(path: list) -> str:
     return result or "(root)"
 
 
-def _is_choice_dict(validator_node: dict) -> bool:
-    """Determine if a validator dict is a CHOICE dict (all values are callables,
-    no reserved keys).
-    """
-    if RESERVED_KEYS & validator_node.keys():
-        return False
-    return all(callable(v) for v in validator_node.values())
-
-
 def _validate_value(path: list, val: Any, validator, errors: list):
     """Run a single validator callable on a value, appending errors if it fails."""
     path_str = _format_path(path)
@@ -129,12 +120,11 @@ def validate_recursive(
 
             if callable(node):
                 _validate_value(child_path, val, node, errors)
+            elif isinstance(node, tuple) and node[0] == "CHOICE":
+                _validate_choice(child_path, val, node[1], errors)
             elif isinstance(node, dict):
-                if _is_choice_dict(node):
-                    _validate_choice(child_path, val, node, errors)
+                if isinstance(val, (dict, list)):
+                    validate_recursive(node, val, errors, child_path)
                 else:
-                    if isinstance(val, (dict, list)):
-                        validate_recursive(node, val, errors, child_path)
-                    else:
-                        if "self" in node:
-                            _validate_value(child_path, val, node["self"], errors)
+                    if "self" in node:
+                        _validate_value(child_path, val, node["self"], errors)

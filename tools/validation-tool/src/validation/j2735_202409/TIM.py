@@ -55,17 +55,17 @@ MANDATORY_VALIDATOR_MAP = {
             "content",
         ],  # mandatory fields
         "frameType": TravelerInformation.TravelerInfoType.set_val,
-        "msgId": {
+        "msgId": ("CHOICE", {
             "roadSignID": TravelerInformation.RoadSignID.set_val,
             "furtherInfoID": Common.FurtherInfoID.set_val,
-        },
+        }),
         "startTime": Common.MinuteOfTheYear.set_val,
         "durationTime": TravelerInformation.MinutesDuration.set_val,
         "priority": TravelerInformation.SignPriority.set_val,
         "regions": SequenceOfValidator(
             TravelerInformation.GeographicalPath.set_val, (1, 16)
         ),
-        "content": {  # CHOICE
+        "content": ("CHOICE", {
             "advisory": PreprocessValidator(
                 ITIS.ITIScodesAndText.set_val, ITIScodesAndText_preprocess
             ),
@@ -85,6 +85,6 @@ MANDATORY_VALIDATOR_MAP = {
                 TravelerInformation.ExitService.set_val,
                 ITIScodesAndText_preprocess,
             ),
-        },
+        }),
     },
 }
