@@ -1,0 +1,7 @@
+from src.validation.j2735_202409.TIM import (
+    MANDATORY_VALIDATOR_MAP as TIM_VALIDATOR_MAP,
+)
+
+MESSAGE_VALIDATORS = {
+    "TIM": TIM_VALIDATOR_MAP,
+}
