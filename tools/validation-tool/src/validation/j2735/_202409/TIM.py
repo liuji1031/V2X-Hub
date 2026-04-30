@@ -6,6 +6,7 @@ from j2735_202409 import ITIS, Common, TravelerInformation
 from src.validation.custom_validator import (
     PreprocessValidator,
     SequenceOfValidator,
+    ChoiceValidator
 )
 from src.validation.core import SELF, REQUIRED
 
@@ -56,7 +57,7 @@ MANDATORY_VALIDATOR_MAP = {
             "content",
         ],  # mandatory fields
         "frameType": TravelerInformation.TravelerInfoType.set_val,
-        "msgId": ("CHOICE", {
+        "msgId": ChoiceValidator( {
             "roadSignID": TravelerInformation.RoadSignID.set_val,
             "furtherInfoID": Common.FurtherInfoID.set_val,
         }),
@@ -66,7 +67,7 @@ MANDATORY_VALIDATOR_MAP = {
         "regions": SequenceOfValidator(
             TravelerInformation.GeographicalPath.set_val, (1, 16)
         ),
-        "content": ("CHOICE", {
+        "content": ChoiceValidator({
             "advisory": PreprocessValidator(
                 ITIS.ITIScodesAndText.set_val, ITIScodesAndText_preprocess
             ),

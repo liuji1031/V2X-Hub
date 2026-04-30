@@ -138,8 +138,6 @@ def validate_recursive(
 
             if callable(node):
                 _validate_value(child_path, val, node, errors)
-            elif isinstance(node, tuple) and node[0] == "CHOICE":
-                _validate_choice(child_path, val, node[1], errors)
             elif isinstance(node, dict):
                 if isinstance(val, (dict, list)):
                     validate_recursive(node, val, errors, child_path)

@@ -18,6 +18,10 @@ class SequenceOfValidator:
             validator_fcn: the validation function for each item in the SEQUENCE
             valid_range: a tuple of (min, max) number of items in the SEQUENCE (inclusive)
         """
+        assert callable(validator_fcn), "validator_fcn must be callable"
+        assert isinstance(valid_range, tuple) and len(valid_range) == 2, "valid_range must be a tuple of (min, max)"
+        assert isinstance(valid_range[0], int) and isinstance(valid_range[1], int), "valid_range values must be integers"
+        assert valid_range[0] >= 0 and valid_range[1] >= valid_range[0], "valid_range must have non-negative integers with max >= min"
         self.validator_fcn = validator_fcn
         self.valid_range = valid_range
 
@@ -51,6 +55,8 @@ class PreprocessValidator:
             validator_fcn: the validation function for the field
             preprocess_fcn: the preprocessing function to be applied before validation
         """
+        assert callable(validator_fcn), "validator_fcn must be callable"
+        assert callable(preprocess_fcn), "preprocess_fcn must be callable"
         self.validator_fcn = validator_fcn
         self.preprocess_fcn = preprocess_fcn
 
@@ -65,3 +71,33 @@ class PreprocessValidator:
         """
         preprocessed_data = self.preprocess_fcn(data)
         self.validator_fcn(preprocessed_data)
+
+
+class ChoiceValidator:
+    """Validate CHOICE fields."""
+
+    def __init__(self, choice_map: dict):
+        """Initialization
+
+        Args:
+            choice_map: a dict mapping each possible CHOICE key to its validation function
+        """
+        assert isinstance(choice_map, dict), "choice_map must be a dict"
+        for k, v in choice_map.items():
+            assert callable(v), f"validation function for choice '{k}' must be callable"
+        self.choice_map = choice_map
+
+    def __call__(self, data: Any):
+        """Validate the CHOICE field
+
+        Args:
+            data: the data to be validated, expected to be a dict with exactly one key
+
+        Raises:
+            Exception: if validation fails
+        """
+        assert isinstance(data, dict), "CHOICE value must be a dict"
+        assert len(data) == 1, "CHOICE must have exactly one item"
+        for k, v in data.items():
+            assert k in self.choice_map, f"wrong CHOICE key: {k}"
+            self.choice_map[k](v)
