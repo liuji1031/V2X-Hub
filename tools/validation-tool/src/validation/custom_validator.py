@@ -43,7 +43,7 @@ class SequenceOfValidator(CustomValidator):
         """
         assert callable(validator_fcn), "validator_fcn must be callable"
         assert isinstance(valid_range, tuple) and len(valid_range) == 2, (
-            "valid_range must be a tuple of (min, max)"
+            "valid_range must be a tuple of min and max"
         )
         assert isinstance(valid_range[0], int) and isinstance(
             valid_range[1], int
@@ -65,7 +65,7 @@ class SequenceOfValidator(CustomValidator):
         """
         assert isinstance(data, list), "value is not a list"
         assert self.valid_range[0] <= len(data) <= self.valid_range[1], (
-            f"number of items in SEQUENCE out of valid range {self.valid_range}"
+            f"number of items in SEQUENCE out of valid range ({self.valid_range[0]}...{self.valid_range[1]})"
         )
         for i, d in enumerate(data):
             try:
@@ -98,7 +98,11 @@ class PreprocessValidator(CustomValidator):
         Raises:
             Exception: if validation fails
         """
-        preprocessed_data = self.preprocess_fcn(data)
+        try:
+            preprocessed_data = self.preprocess_fcn(data)
+        except Exception as e:
+            raise Exception(f"Preprocessing error: {e}")
+        # validation error will be raised by the validator_fcn
         self.validator_fcn(preprocessed_data)
 
 
@@ -134,3 +138,4 @@ class ChoiceValidator(CustomValidator):
         for k, v in data.items():
             assert k in self.choice_map, f"wrong CHOICE key: {k}"
             self.choice_map[k](v)
+            return
