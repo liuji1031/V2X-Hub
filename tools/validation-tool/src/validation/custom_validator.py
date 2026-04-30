@@ -5,10 +5,32 @@ preprocessing steps before validation, custom sequence validation, etc. This is 
 be expandable to add more complex validation logic if needed.
 """
 
+from abc import ABC, abstractmethod
 from typing import Any
 
 
-class SequenceOfValidator:
+class CustomValidator(ABC):
+    """Base class for custom validators.
+
+    Subclasses must implement the __call__ method, which takes the data to be validated
+    """
+
+    @abstractmethod
+    def __call__(self, data: Any):
+        """Validate the data
+
+        Args:
+            data: the data to be validated
+
+        Raises:
+            Exception: if validation fails
+        """
+        raise NotImplementedError(
+            "CustomValidator subclasses must implement __call__"
+        )
+
+
+class SequenceOfValidator(CustomValidator):
     """Validate SEQUENCE of objects."""
 
     def __init__(self, validator_fcn, valid_range: tuple) -> None:
@@ -16,7 +38,8 @@ class SequenceOfValidator:
 
         Args:
             validator_fcn: the validation function for each item in the SEQUENCE
-            valid_range: a tuple of (min, max) number of items in the SEQUENCE (inclusive)
+            valid_range: a tuple of (min, max) number of items in the SEQUENCE
+                        (inclusive)
         """
         assert callable(validator_fcn), "validator_fcn must be callable"
         assert isinstance(valid_range, tuple) and len(valid_range) == 2, (
@@ -51,7 +74,7 @@ class SequenceOfValidator:
                 raise Exception(f"validation failed for item {i}: {e}")
 
 
-class PreprocessValidator:
+class PreprocessValidator(CustomValidator):
     """Add preprocessing before validation."""
 
     def __init__(self, validator_fcn, preprocess_fcn):
@@ -79,7 +102,7 @@ class PreprocessValidator:
         self.validator_fcn(preprocessed_data)
 
 
-class ChoiceValidator:
+class ChoiceValidator(CustomValidator):
     """Validate CHOICE fields."""
 
     def __init__(self, choice_map: dict):
