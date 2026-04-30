@@ -126,8 +126,85 @@ def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
     return out
 
 
+def _strip_brackets(s: str):
+    out_s = ""
+    i = 0
+    while i < len(s):
+        if s[i] == "[":
+            while i < len(s) and s[i] != "]":
+                i += 1
+            i += 1  # one past the ']'
+        if i < len(s):
+            out_s += s[i]
+            i += 1
+        else:
+            break
+    return out_s
+
+
+def valdiate_choice_val(val: Any):
+    assert isinstance(val, dict), "value of a CHOICE field must be a dictionary"
+    assert len(val) == 1, "CHOICE fields must have length of 1 dictionary"
+
+
+def preprocess_choice_recursive(
+    parent_handle: Union[dict, list],
+    curr_key: Union[str, int],
+    curr_data: Union[list, dict],
+    choice_set: set,
+) -> Union[dict, list]:
+    """Recursively check if a field is CHOICE field and reorganize data.
+
+    PyCrate expects this from the CHOICE field
+    ```yaml
+    a:  # CHOICE
+        b: c
+    ```
+
+    Then the correct format for PyCrate is {"a":("b", "c")}
+    Returns:
+        processed data dictionary or list
+    """
+    if curr_key in choice_set:
+        valdiate_choice_val(curr_data)
+        for k, v in curr_data:
+            if isinstance(v, dict):
+                parent_handle[curr_key] = (
+                    k,
+                    {
+                        _k: preprocess_choice_recursive(v, _k, _v, choice_set)
+                        for _k, _v in v.items()
+                    },
+                )
+            elif isinstance(v, list):
+                parent_handle[curr_key] = (
+                    k,
+                    [
+                        preprocess_choice_recursive(v, _k, _v, choice_set)
+                        for _k, _v in enumerate(v)
+                    ],
+                )
+    else:
+        if isinstance(curr_data, dict):
+            for key, val in curr_data.items():
+                curr_data[key] = preprocess_choice_recursive(
+                    curr_data, key, val, choice_set
+                )
+
+        elif isinstance(curr_data, list):
+            for idx, item in enumerate(curr_data):
+                curr_data[idx] = preprocess_choice_recursive(
+                    curr_data, idx, item, choice_set
+                )
+        else:
+            pass
+
+    return parent_handle
+
+
 def validate_recursive(
     validator_map: dict,
+    choice_set: set,
     data: Union[dict, list],
     errors: list,
     parent_key: str = "",
@@ -141,6 +218,8 @@ def validate_recursive(
 
     Args:
         validator_map, dict[str, Any]: the nested validator map
+        chice_set, set[str]: a set defining which attribute is a CHOICE field,
+                            which needs to be handled differently
         data: the data to be validated
         errors: the list of ValidationError objects
         parent_key: the current nesting path (string), used for error reporting
@@ -160,7 +239,12 @@ def validate_recursive(
                 # each item in list
                 # note: skip_self is set to True
                 validate_recursive(
-                    validator_map, item, errors, child_key, skip_self=True
+                    validator_map,
+                    choice_set,
+                    item,
+                    errors,
+                    child_key,
+                    skip_self=True,
                 )
         return
 
@@ -184,7 +268,6 @@ def validate_recursive(
 
             child_key = gen_child_key(parent_key, key)
             child_val_map = validator_map[key]
-
             if callable(child_val_map):
                 # map directly to a validator function
                 _validate_value(child_key, val, child_val_map, errors)
@@ -192,4 +275,6 @@ def validate_recursive(
                 # nested validator map, validate recursively
                 # the type of val will be automatically handled in the recursive call
                 # i.e., list, dict or other
-                validate_recursive(child_val_map, val, errors, child_key)
+                validate_recursive(
+                    child_val_map, choice_set, val, errors, child_key
+                )
