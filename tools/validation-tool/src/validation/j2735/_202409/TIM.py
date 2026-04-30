@@ -6,7 +6,7 @@ from j2735_202409 import ITIS, Common, TravelerInformation
 from src.validation.custom_validator import (
     PreprocessValidator,
     SequenceOfValidator,
-    ChoiceValidator
+    ChoiceValidator,
 )
 from src.validation.core import SELF, REQUIRED
 
@@ -57,36 +57,40 @@ MANDATORY_VALIDATOR_MAP = {
             "content",
         ],  # mandatory fields
         "frameType": TravelerInformation.TravelerInfoType.set_val,
-        "msgId": ChoiceValidator( {
-            "roadSignID": TravelerInformation.RoadSignID.set_val,
-            "furtherInfoID": Common.FurtherInfoID.set_val,
-        }),
+        "msgId": ChoiceValidator(
+            {
+                "roadSignID": TravelerInformation.RoadSignID.set_val,
+                "furtherInfoID": Common.FurtherInfoID.set_val,
+            }
+        ),
         "startTime": Common.MinuteOfTheYear.set_val,
         "durationTime": TravelerInformation.MinutesDuration.set_val,
         "priority": TravelerInformation.SignPriority.set_val,
         "regions": SequenceOfValidator(
             TravelerInformation.GeographicalPath.set_val, (1, 16)
         ),
-        "content": ChoiceValidator({
-            "advisory": PreprocessValidator(
-                ITIS.ITIScodesAndText.set_val, ITIScodesAndText_preprocess
-            ),
-            "workZone": PreprocessValidator(
-                TravelerInformation.WorkZone.set_val,
-                ITIScodesAndText_preprocess,
-            ),
-            "genericSign": PreprocessValidator(
-                TravelerInformation.GenericSignage.set_val,
-                ITIScodesAndText_preprocess,
-            ),
-            "speedLimit": PreprocessValidator(
-                TravelerInformation.SpeedLimit.set_val,
-                ITIScodesAndText_preprocess,
-            ),
-            "exitService": PreprocessValidator(
-                TravelerInformation.ExitService.set_val,
-                ITIScodesAndText_preprocess,
-            ),
-        }),
+        "content": ChoiceValidator(
+            {
+                "advisory": PreprocessValidator(
+                    ITIS.ITIScodesAndText.set_val, ITIScodesAndText_preprocess
+                ),
+                "workZone": PreprocessValidator(
+                    TravelerInformation.WorkZone.set_val,
+                    ITIScodesAndText_preprocess,
+                ),
+                "genericSign": PreprocessValidator(
+                    TravelerInformation.GenericSignage.set_val,
+                    ITIScodesAndText_preprocess,
+                ),
+                "speedLimit": PreprocessValidator(
+                    TravelerInformation.SpeedLimit.set_val,
+                    ITIScodesAndText_preprocess,
+                ),
+                "exitService": PreprocessValidator(
+                    TravelerInformation.ExitService.set_val,
+                    ITIScodesAndText_preprocess,
+                ),
+            }
+        ),
     },
 }
