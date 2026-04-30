@@ -72,7 +72,7 @@ def _validate_choice(path: list, val: Any, choice_map: dict, errors: list):
 
 
 def validate_required_keys(
-    validator_map: dict, data: dict, errors: list, path: list
+    validator_map: dict, data: dict, errors: list, parent_key: str
 ):
     """Validate that the data contains all required keys.
 
@@ -80,18 +80,19 @@ def validate_required_keys(
         validator_map: the nested validator map
         data: the data to be validated
         errors: the list of ValidationError objects
-        path: the current nesting path (list of keys), used for error reporting
+        parent_key: the current nesting path (string), used for error reporting
     """
-    assert "required" in validator_map
-    for req_key in validator_map["required"]:
+    assert REQUIRED in validator_map
+    for req_key in validator_map[REQUIRED]:
         if req_key not in data:
             errors.append(
                 ValidationError(
-                    _format_path(path + [req_key]),
+                    parent_key,
                     None,
                     f"Missing required field: {req_key}",
                 )
             )
+
 
 def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
     """Generate the child key from the parent key and the key.
@@ -124,11 +125,13 @@ def gen_child_key(parent_key: str, key: str, idx: Union[int, None] = None):
         out += f"[{idx}]"
     return out
 
+
 def validate_recursive(
     validator_map: dict,
     data: Union[dict, list],
     errors: list,
     parent_key: str = "",
+    skip_self: bool = False,
 ):
     """Validate the data by co-traversing a nested validator map alongside the data.
 
@@ -141,10 +144,12 @@ def validate_recursive(
         data: the data to be validated
         errors: the list of ValidationError objects
         parent_key: the current nesting path (string), used for error reporting
+        skip_self: whether to skip the SELF check, useful for list items where the SELF
+            key may still be present for individual items
     """
     # validator map represents the schema corresponding to the current parent_key
     # data is essentially the value corresponding to parent_key
-    if SELF in validator_map:
+    if SELF in validator_map and not skip_self:
         _validate_value(parent_key, data, validator_map[SELF], errors)
 
     if isinstance(data, list):
@@ -153,7 +158,10 @@ def validate_recursive(
             if isinstance(item, (dict, list)):
                 # validator_map stays at the same level, apply the same schema to
                 # each item in list
-                validate_recursive(validator_map, item, errors, child_key)
+                # note: skip_self is set to True
+                validate_recursive(
+                    validator_map, item, errors, child_key, skip_self=True
+                )
         return
 
     if isinstance(data, dict):
@@ -166,12 +174,14 @@ def validate_recursive(
         for key, val in data.items():
             if key in RESERVED_KEYS:
                 # it is assumed that the reserved keys will NOT appear in real data
-                logger.warning(f"data contains reserved key {key} at {parent_key}, skipping validation for this key")
+                logger.warning(
+                    f"data contains reserved key {key} at {parent_key}, skipping validation for this key"
+                )
                 continue
             if key not in validator_map:
                 # skip if not required to validate, e.g., optional fields
                 continue
-            
+
             child_key = gen_child_key(parent_key, key)
             child_val_map = validator_map[key]
 
