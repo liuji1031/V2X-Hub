@@ -1,3 +1,10 @@
+"""Custom validator classes.
+
+This is useful to expanding the logic of the basic validator functions, e.g., adding
+preprocessing steps before validation, custom sequence validation, etc. This is meant to
+be expandable to add more complex validation logic if needed.
+"""
+
 from typing import Any
 
 
