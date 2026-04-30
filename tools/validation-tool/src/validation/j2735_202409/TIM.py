@@ -3,7 +3,6 @@ from typing import Any
 
 from j2735_202409 import ITIS, Common, TravelerInformation
 
-from src.validation.core import CONT_TRAVERSAL
 from src.validation.custom_validator import (
     PreprocessValidator,
     SequenceOfValidator,
@@ -42,35 +41,50 @@ def ITIScodesAndText_preprocess(data: Any):
 
 
 MANDATORY_VALIDATOR_MAP = {
+    "required": ["msgCnt", "dataFrames"],  # mandatory fields
     "msgCnt": Common.MsgCount.set_val,
-    "dataFrames": (SequenceOfValidator(lambda x: None, (1, 8)), CONT_TRAVERSAL),
-    "dataFrames[].frameType": TravelerInformation.TravelerInfoType.set_val,
-    "dataFrames[].msgId": {
-        "roadSignID": TravelerInformation.RoadSignID.set_val,
-        "furtherInfoID": Common.FurtherInfoID.set_val,
-    },
-    "dataFrames[].startTime": Common.MinuteOfTheYear.set_val,
-    "dataFrames[].durationTime": TravelerInformation.MinutesDuration.set_val,
-    "dataFrames[].priority": TravelerInformation.SignPriority.set_val,
-    "dataFrames[].regions": SequenceOfValidator(
-        TravelerInformation.GeographicalPath.set_val, (1, 16)
-    ),
-    "dataFrames[].content": {  # CHOICE: advisory, workZone, genericSign, speedLimit, exitService
-        "advisory": PreprocessValidator(
-            ITIS.ITIScodesAndText.set_val, ITIScodesAndText_preprocess
+    "dataFrames": {
+        "self": SequenceOfValidator(lambda x: None, (1, 8)),
+        "required": [
+            "frameType",
+            "msgId",
+            "startTime",
+            "durationTime",
+            "priority",
+            "regions",
+            "content",
+        ],  # mandatory fields
+        "frameType": TravelerInformation.TravelerInfoType.set_val,
+        "msgId": {
+            "roadSignID": TravelerInformation.RoadSignID.set_val,
+            "furtherInfoID": Common.FurtherInfoID.set_val,
+        },
+        "startTime": Common.MinuteOfTheYear.set_val,
+        "durationTime": TravelerInformation.MinutesDuration.set_val,
+        "priority": TravelerInformation.SignPriority.set_val,
+        "regions": SequenceOfValidator(
+            TravelerInformation.GeographicalPath.set_val, (1, 16)
         ),
-        "workZone": PreprocessValidator(
-            TravelerInformation.WorkZone.set_val, ITIScodesAndText_preprocess
-        ),
-        "genericSign": PreprocessValidator(
-            TravelerInformation.GenericSignage.set_val,
-            ITIScodesAndText_preprocess,
-        ),
-        "speedLimit": PreprocessValidator(
-            TravelerInformation.SpeedLimit.set_val, ITIScodesAndText_preprocess
-        ),
-        "exitService": PreprocessValidator(
-            TravelerInformation.ExitService.set_val, ITIScodesAndText_preprocess
-        ),
+        "content": {  # CHOICE
+            "advisory": PreprocessValidator(
+                ITIS.ITIScodesAndText.set_val, ITIScodesAndText_preprocess
+            ),
+            "workZone": PreprocessValidator(
+                TravelerInformation.WorkZone.set_val,
+                ITIScodesAndText_preprocess,
+            ),
+            "genericSign": PreprocessValidator(
+                TravelerInformation.GenericSignage.set_val,
+                ITIScodesAndText_preprocess,
+            ),
+            "speedLimit": PreprocessValidator(
+                TravelerInformation.SpeedLimit.set_val,
+                ITIScodesAndText_preprocess,
+            ),
+            "exitService": PreprocessValidator(
+                TravelerInformation.ExitService.set_val,
+                ITIScodesAndText_preprocess,
+            ),
+        },
     },
 }
