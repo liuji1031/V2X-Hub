@@ -4,7 +4,7 @@ import logging
 import os
 from dataclasses import dataclass, field
 from typing import Any, Union
-from custom_validator import MultipleErrors
+from src.validation.custom_validator import MultipleErrors
 
 log_level = os.getenv("VALIDATION_LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
