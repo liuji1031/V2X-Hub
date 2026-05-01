@@ -142,7 +142,7 @@ def _strip_brackets(s: str):
     return out_s
 
 
-def valdiate_choice_val(val: Any):
+def validate_choice_val(val: Any):
     assert isinstance(val, dict), "value of a CHOICE field must be a dictionary"
     assert len(val) == 1, "CHOICE fields must have length of 1 dictionary"
 
@@ -166,40 +166,41 @@ def preprocess_choice_recursive(
         processed data dictionary or list
     """
     if curr_key in choice_set:
-        valdiate_choice_val(curr_data)
-        for k, v in curr_data:
-            if isinstance(v, dict):
-                parent_handle[curr_key] = (
-                    k,
-                    {
-                        _k: preprocess_choice_recursive(v, _k, _v, choice_set)
-                        for _k, _v in v.items()
-                    },
-                )
-            elif isinstance(v, list):
-                parent_handle[curr_key] = (
-                    k,
-                    [
-                        preprocess_choice_recursive(v, _k, _v, choice_set)
-                        for _k, _v in enumerate(v)
-                    ],
-                )
+        validate_choice_val(curr_data)
+        k, v = next(iter(curr_data.items()))  # type: ignore
+        if isinstance(v, dict):
+            processed_v = {
+                _k: preprocess_choice_recursive(v, _k, _v, choice_set)
+                for _k, _v in v.items()
+            }
+            parent_handle[curr_key] = (k, processed_v)  # type: ignore
+        elif isinstance(v, list):
+            processed_v = [
+                preprocess_choice_recursive(v, _k, _v, choice_set)
+                for _k, _v in enumerate(v)
+            ]
+            parent_handle[curr_key] = (k, processed_v)  # type: ignore
+        else:
+            parent_handle[curr_key] = (k, v)  # type: ignore
     else:
         if isinstance(curr_data, dict):
             for key, val in curr_data.items():
-                curr_data[key] = preprocess_choice_recursive(
-                    curr_data, key, val, choice_set
-                )
-
+                preprocess_choice_recursive(curr_data, key, val, choice_set)
         elif isinstance(curr_data, list):
             for idx, item in enumerate(curr_data):
-                curr_data[idx] = preprocess_choice_recursive(
-                    curr_data, idx, item, choice_set
-                )
-        else:
-            pass
+                preprocess_choice_recursive(curr_data, idx, item, choice_set)
 
-    return parent_handle
+    return curr_data
+
+def preprocess_choices(data: dict, choice_set: set) -> dict:
+    """Transform all CHOICE fields in data to PyCrate tuple format in-place.
+    Args:
+        data: the message dictionary to preprocess
+        choice_set: set of field names that are CHOICE types
+    """
+    for key, val in data.items():
+        preprocess_choice_recursive(data, key, val, choice_set)
+    return data
 
 
 def validate_recursive(
