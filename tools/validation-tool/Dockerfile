@@ -7,8 +7,8 @@ ENV PIP_BREAK_SYSTEM_PACKAGES=1
 # RUN  python3 -m pip install --upgrade pip
 
 WORKDIR /validationTool
-# RUN git clone https://github.com/pycrate-org/pycrate.git
-# RUN cd /validationTool/pycrate && python3 setup.py install
+RUN git clone -b validation https://github.com/liuji1031/pycrate.git
+RUN cd /validationTool/pycrate && python3 -m pip install -e .
 
 COPY requirements.txt /validationTool/requirements.txt
 RUN pip3 install -r requirements.txt
