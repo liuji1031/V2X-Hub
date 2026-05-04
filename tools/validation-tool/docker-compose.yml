@@ -18,3 +18,4 @@ services:
         - GID=1000
     volumes:
       - .:/validationTool:rw
+      - /home/vboxuser/Leidos/pycrate:/validationTool/pycrate:rw
