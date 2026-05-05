@@ -2,17 +2,27 @@ import yaml
 import json
 import argparse
 from pathlib import Path
+from collections import OrderedDict
+
+# 1. Define a representer for OrderedDict
+def represent_ordereddict(dumper, data):
+    return dumper.represent_mapping('tag:yaml.org,2002:map', data.items())
+
+
+yaml.add_representer(OrderedDict, represent_ordereddict)
+yaml.SafeDumper.add_representer(OrderedDict, represent_ordereddict)
+
 def write_yaml(file_path, data):
     if isinstance(file_path, Path):
         file_path = str(file_path)
     with open(file_path, 'w') as file:
-        yaml.safe_dump(data, file)
-    
+        yaml.safe_dump(data, file, sort_keys=False)
+        
 def load_json(file_path):
     if isinstance(file_path, Path):
         file_path = str(file_path)
     with open(file_path, 'r') as file:
-        data = json.load(file)
+        data = json.load(file, object_pairs_hook=OrderedDict)
     return data
 
 script_dir = Path(__file__).parent
