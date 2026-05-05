@@ -1,8 +1,59 @@
 messageId: 31
 value:
   TravelerInformation:
+    msgCnt: 1
     dataFrames:
-    - content:
+    - doNotUse1: 0
+      frameType: advisory
+      msgId:
+        roadSignID:
+          position:
+            lat: 389549153
+            long: -771488965
+            elevation: 400
+          viewAngle: (49152, 16)
+      startTime: 394574
+      durationTime: 32000
+      priority: 5
+      doNotUse2: 0
+      regions:
+      - anchor:
+          lat: 389549153
+          long: -771488965
+          elevation: 400
+        laneWidth: 366
+        directionality: forward
+        closedPath: false
+        direction:
+        - from090-0to112-5degrees
+        - from112-5to135-0degrees
+        - from135-0to157-5degrees
+        description:
+          path:
+            offset:
+              xy:
+                nodes:
+                - delta:
+                    node-LatLon:
+                      lon: -771489394
+                      lat: 389549194
+                  attributes:
+                    dElevation: -10
+                - delta:
+                    node-LatLon:
+                      lon: -771487215
+                      lat: 389548996
+                  attributes:
+                    dElevation: 10
+                - delta:
+                    node-LatLon:
+                      lon: -771485210
+                      lat: 389548981
+                  attributes:
+                    dElevation: 10
+      doNotUse3: 0
+      doNotUse4: 0
+      content:
         speedLimit:
         - item:
             itis: 27
@@ -19,56 +70,3 @@ value:
           roadSurfaceDescription:
             portlandCement:
               type: newSharp
-      doNotUse1: 0
-      doNotUse2: 0
-      doNotUse3: 0
-      doNotUse4: 0
-      durationTime: 32000
-      frameType: advisory
-      msgId:
-        roadSignID:
-          position:
-            elevation: 400
-            lat: 389549153
-            long: -771488965
-          viewAngle:
-          - from000-0to022-5degrees
-          - from022-5to045-0degrees
-      priority: 5
-      regions:
-      - anchor:
-          elevation: 400
-          lat: 389549153
-          long: -771488965
-        closedPath: false
-        description:
-          path:
-            offset:
-              xy:
-                nodes:
-                - attributes:
-                    dElevation: -10
-                  delta:
-                    node-LatLon:
-                      lat: 389549194
-                      lon: -771489394
-                - attributes:
-                    dElevation: 10
-                  delta:
-                    node-LatLon:
-                      lat: 389548996
-                      lon: -771487215
-                - attributes:
-                    dElevation: 10
-                  delta:
-                    node-LatLon:
-                      lat: 389548981
-                      lon: -771485210
-        direction:
-        - from090-0to112-5degrees
-        - from112-5to135-0degrees
-        - from135-0to157-5degrees
-        directionality: forward
-        laneWidth: 366
-      startTime: 394574
-    msgCnt: 1
