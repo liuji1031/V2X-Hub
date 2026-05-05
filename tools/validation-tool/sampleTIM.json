@@ -14,10 +14,7 @@
                                 "long": -771488965,
                                 "elevation": 400
                             },
-                            "viewAngle": [
-                                "from000-0to022-5degrees",
-                                "from022-5to045-0degrees"
-                            ]
+                            "viewAngle": "c000"
                         }
                     },
                     "startTime": 394574,
@@ -34,11 +31,7 @@
                             "laneWidth": 366,
                             "directionality": "forward",
                             "closedPath": false,
-                            "direction": [
-                                "from090-0to112-5degrees",
-                                "from112-5to135-0degrees",
-                                "from135-0to157-5degrees"
-                            ],
+                            "direction": "a000",
                             "description": {
                                 "path": {
                                     "offset": {
