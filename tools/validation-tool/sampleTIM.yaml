@@ -1,0 +1,74 @@
+messageId: 31
+value:
+  TravelerInformation:
+    dataFrames:
+    - content:
+        speedLimit:
+        - item:
+            itis: 27
+        - item:
+            text: Curve Ahead
+        - item:
+            itis: 2564
+        - item:
+            text: '25'
+        - item:
+            itis: 8720
+      contentNew:
+        frictionInfo:
+          roadSurfaceDescription:
+            portlandCement:
+              type: newSharp
+      doNotUse1: 0
+      doNotUse2: 0
+      doNotUse3: 0
+      doNotUse4: 0
+      durationTime: 32000
+      frameType: advisory
+      msgId:
+        roadSignID:
+          position:
+            elevation: 400
+            lat: 389549153
+            long: -771488965
+          viewAngle:
+          - from000-0to022-5degrees
+          - from022-5to045-0degrees
+      priority: 5
+      regions:
+      - anchor:
+          elevation: 400
+          lat: 389549153
+          long: -771488965
+        closedPath: false
+        description:
+          path:
+            offset:
+              xy:
+                nodes:
+                - attributes:
+                    dElevation: -10
+                  delta:
+                    node-LatLon:
+                      lat: 389549194
+                      lon: -771489394
+                - attributes:
+                    dElevation: 10
+                  delta:
+                    node-LatLon:
+                      lat: 389548996
+                      lon: -771487215
+                - attributes:
+                    dElevation: 10
+                  delta:
+                    node-LatLon:
+                      lat: 389548981
+                      lon: -771485210
+        direction:
+        - from090-0to112-5degrees
+        - from112-5to135-0degrees
+        - from135-0to157-5degrees
+        directionality: forward
+        laneWidth: 366
+      startTime: 394574
+    msgCnt: 1

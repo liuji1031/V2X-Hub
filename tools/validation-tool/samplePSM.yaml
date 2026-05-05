@@ -1,0 +1,27 @@
+messageId: 32
+value:
+  PersonalSafetyMessage:
+    accelSet:
+      lat: 0
+      long: 0
+      vert: 0
+      yaw: 0
+    accuracy:
+      orientation: 0
+      semiMajor: 50
+      semiMinor: 50
+    basicType: aPEDESTRIAN
+    heading: 8000
+    id: '00000001'
+    msgCnt: 1
+    pathPrediction:
+      confidence: 200
+      radiusOfCurve: 32767
+    position:
+      elevation: 400
+      lat: 389549153
+      long: -771488965
+    propulsion:
+      human: onFoot
+    secMark: 45000
+    speed: 125
